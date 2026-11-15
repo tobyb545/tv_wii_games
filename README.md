@@ -50,14 +50,15 @@ If the cursor drifts, push it against the edge of the screen to re-centre it.
 | **Brain Buzz** | 1–8, all at once | 10 quiz questions answered on your phone. Faster correct answers score more |
 | **Splat Turf** | 1–8, all at once | Point to paint the floor your colour. A drops a paint bomb |
 | **Pump & Pop** | 1–8, all at once | Hold to pump, let go to bank. Each balloon has a secret popping point |
+| **Turbo Tracks** | 1–8 (+ CPU racers) | Kart racing on 3 tracks or a 3-race Grand Prix. Steer by turning your phone like a wheel. Grab item orbs for Turbo, Goo, Shockwave or Shield |
 
 ## Adding a game
 
 Create `public/tv/games/mygame.js` and call `Huddle.register({ id, name, desc, controls, minPlayers, preview(ctx,w,h,t), create(api, players) })`. Then add a `<script>` tag for it in `public/tv/index.html`. The other game files show how it works:
 
 - `create` returns `{ update(dt), draw(ctx,t), input(player, msg) }`.
-- Phone messages are `{t:'btn',b:'a',d:true}`, `{t:'p',dx,dy}`, `{t:'shake',s}`, `{t:'swing',power,curve,spin}`, `{t:'tilt',x,y}`, `{t:'dash'}` and `{t:'choice',i}`.
-- `api.setMode(mode, hint, ids?, {text})` switches the phone layout: `pointer`, `shake`, `swing`, `buzzer`, `bomb`, `tilt`, `choice` (pass `{options:[…4]}`) or `wait`.
+- Phone messages are `{t:'btn',b:'a',d:true}`, `{t:'p',dx,dy}`, `{t:'shake',s}`, `{t:'swing',power,curve,spin}`, `{t:'tilt',x,y}`, `{t:'dash'}`, `{t:'choice',i}`, `{t:'steer',s}` and `{t:'item'}`.
+- `api.setMode(mode, hint, ids?, {text})` switches the phone layout: `pointer`, `shake`, `swing`, `buzzer`, `bomb`, `tilt`, `choice` (pass `{options:[…4]}`), `drive` (pass `{item}`) or `wait`.
 - `api.end(results)` shows the results screen.
 
 The TV can draw up to 12 menu tiles.

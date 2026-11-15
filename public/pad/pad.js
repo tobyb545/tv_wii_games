@@ -58,6 +58,11 @@
     if (m === 'bomb') $('bombText').textContent = extra.text || 'TAP TO THROW';
     if (m === 'buzzer') $('buzzerText').textContent = extra.text || 'TAP!';
     if (m === 'tilt') { calibrate = true; }
+    if (m === 'drive') {
+      wheelCal = true;
+      $('itemName').textContent = extra.item || 'No item';
+      $('itemBtn').classList.toggle('has', !!extra.item);
+    }
     if (m === 'choice') {
       const o = extra.options || ['', '', '', ''];
       document.querySelectorAll('.choice').forEach((b, i) => { b.querySelector('.ctext').textContent = o[i] || ''; b.style.visibility = o[i] === null ? 'hidden' : ''; });
@@ -235,6 +240,55 @@
     }
   }
 
+  // ---------- steering wheel (kart) ----------
+  // Steering = how far the phone is rotated about its screen axis, compared with how it was held
+  // when the race started. Using the cross product of the two gravity directions makes this work
+  // whichever sign convention the phone uses, and in portrait or landscape.
+  let wheelCal = true, wheelRest = null, gravFast = null, wheelTouch = null, steer = 0, lastSteer = 0, lastSteerSend = 0;
+  window.addEventListener('devicemotion', e => {
+    const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+    gravFast = gravFast ? { x: gravFast.x + (a.x - gravFast.x) * 0.35, y: gravFast.y + (a.y - gravFast.y) * 0.35 } : { x: a.x, y: a.y };
+  });
+  {
+    const z = $('wheelZone');
+    const set = e => { const r = z.getBoundingClientRect(); wheelTouch = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width * 0.3))); };
+    z.addEventListener('pointerdown', e => { e.preventDefault(); z.setPointerCapture(e.pointerId); set(e); });
+    z.addEventListener('pointermove', e => { if (wheelTouch != null) set(e); });
+    const end = () => (wheelTouch = null);
+    z.addEventListener('pointerup', end); z.addEventListener('pointercancel', end);
+  }
+  $('wheelCenter').addEventListener('click', () => { wheelCal = true; vibrate(20); });
+  pressable($('brakeBtn'), () => btn('b', true), () => btn('b', false));
+  pressable($('itemBtn'), () => send({ t: 'item' }));
+  function driveTick(now) {
+    if (mode !== 'drive') return;
+    let s = 0, tilt = false;
+    if (gravFast && opts.motion) {
+      const l = Math.hypot(gravFast.x, gravFast.y);
+      if (l > 3) { // phone is upright enough to steer with
+        const g = { x: gravFast.x / l, y: gravFast.y / l };
+        if (wheelCal || !wheelRest) { wheelRest = g; wheelCal = false; }
+        const cross = wheelRest.x * g.y - wheelRest.y * g.x, dot = wheelRest.x * g.x + wheelRest.y * g.y;
+        s = Math.max(-1, Math.min(1, Math.atan2(cross, dot) / 0.6)) * (opts.invX ? -1 : 1);
+        if (Math.abs(s) < 0.04) s = 0;
+        tilt = true;
+      }
+    }
+    if (wheelTouch != null) s = wheelTouch;
+    if (keyHeld.left || keyHeld.right) s = (keyHeld.right ? 1 : 0) - (keyHeld.left ? 1 : 0);
+    steer = s;
+    $('wheel').style.transform = `rotate(${s * 100}deg)`;
+    $('wheelZone').classList.toggle('left', wheelTouch != null && s < -0.1);
+    $('wheelZone').classList.toggle('right', wheelTouch != null && s > 0.1);
+    if (tilt) $('wheelLabel').textContent = 'Steering by tilt · tap ⟲ Centre if it pulls to one side';
+    if ((Math.abs(s - lastSteer) > 0.02 && now - lastSteerSend > 33) || now - lastSteerSend > 250) {
+      send({ t: 'steer', s: +s.toFixed(3) }); lastSteer = s; lastSteerSend = now;
+    }
+  }
+  const keyHeld = { left: false, right: false };
+  addEventListener('keydown', e => { if (e.code === 'ArrowLeft') keyHeld.left = true; if (e.code === 'ArrowRight') keyHeld.right = true; if (mode === 'drive' && e.code === 'KeyI') send({ t: 'item' }); });
+  addEventListener('keyup', e => { if (e.code === 'ArrowLeft') keyHeld.left = false; if (e.code === 'ArrowRight') keyHeld.right = false; });
+
   // ---------- quiz answers ----------
   document.querySelectorAll('.choice').forEach(b => pressable(b, () => { send({ t: 'choice', i: +b.dataset.i }); vibrate(30); }));
 
@@ -284,6 +338,7 @@
   // flush pointer movement at display rate
   (function loop(now) {
     tiltTick(now || performance.now());
+    driveTick(now || performance.now());
     if (Math.abs(accDx) > 0.05 || Math.abs(accDy) > 0.05) {
       send({ t: 'p', dx: +accDx.toFixed(2), dy: +accDy.toFixed(2) });
       accDx = 0; accDy = 0;

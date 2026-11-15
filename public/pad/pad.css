@@ -56,7 +56,7 @@ body[data-screen="join"] #join, body[data-screen="pad"] #pad { display: flex; }
 .mode { display: none; flex: 1; flex-direction: column; gap: 12px; min-height: 0; }
 body[data-mode="pointer"] .m-pointer, body[data-mode="shake"] .m-shake, body[data-mode="swing"] .m-swing,
 body[data-mode="buzzer"] .m-buzzer, body[data-mode="bomb"] .m-bomb, body[data-mode="wait"] .m-wait,
-body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice { display: flex; }
+body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice, body[data-mode="drive"] .m-drive { display: flex; }
 
 .touchpad {
   flex: 1; border-radius: 28px; background: #fff; border: 2px solid var(--line); position: relative;
@@ -126,3 +126,16 @@ body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice { display: fl
 .choice .ctext { font-size: 17px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
 .choice.c0 { background: #ff4d5e; } .choice.c1 { background: #2f8cff; } .choice.c2 { background: #f2a516; } .choice.c3 { background: #2fc46b; }
 .choice.pressed { transform: translateY(4px) scale(.98); box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+
+/* drive (kart) */
+.wheel-zone { flex: 1; position: relative; border-radius: 30px; background: #fff; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.wheel-zone::before, .wheel-zone::after { content: ''; position: absolute; top: 0; bottom: 0; width: 50%; transition: background .1s; }
+.wheel-zone::before { left: 0; } .wheel-zone::after { right: 0; }
+.wheel-zone.left::before, .wheel-zone.right::after { background: rgba(0,0,0,.05); }
+.wheel { width: 64%; max-width: 260px; color: var(--pc); will-change: transform; position: relative; z-index: 1; }
+.drive-row { display: flex; gap: 10px; align-items: stretch; height: 110px; }
+.drive-row .chip { align-self: center; }
+.brake { width: 96px; border-radius: 24px; background: #fff; border: 2px solid var(--line); font-weight: 900; font-size: 17px; color: var(--muted); box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+.item-btn { flex: 1; border-radius: 26px; background: #c9d2dc; color: #fff; font-weight: 900; font-size: 26px; box-shadow: 0 6px 0 rgba(0,0,0,.12); }
+.item-btn.has { background: var(--pc); }
+.brake.pressed, .item-btn.pressed { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
