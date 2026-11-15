@@ -57,6 +57,11 @@
     if (m === 'wait') $('waitText').textContent = extra.text || hint || 'Hang tight…';
     if (m === 'bomb') $('bombText').textContent = extra.text || 'TAP TO THROW';
     if (m === 'buzzer') $('buzzerText').textContent = extra.text || 'TAP!';
+    if (m === 'tilt') { calibrate = true; }
+    if (m === 'choice') {
+      const o = extra.options || ['', '', '', ''];
+      document.querySelectorAll('.choice').forEach((b, i) => { b.querySelector('.ctext').textContent = o[i] || ''; b.style.visibility = o[i] === null ? 'hidden' : ''; });
+    }
     if (m === 'shake') { shakes = 0; $('shakeCount').textContent = motionSeen ? 'shake it like you mean it' : 'tap here as fast as you can'; }
   }
 
@@ -70,6 +75,9 @@
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         const r = await DeviceMotionEvent.requestPermission();
         if (r !== 'granted') opts.motion = false;
+      }
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        await DeviceOrientationEvent.requestPermission();
       }
     } catch {}
     if (!window.isSecureContext) opts.motion = false;
@@ -192,6 +200,44 @@
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   }
 
+  // ---------- tilt joystick ----------
+  let calibrate = true, tiltBase = null, orient = null, drag = null, lastTiltSend = 0, lastTilt = { x: 0, y: 0 };
+  window.addEventListener('deviceorientation', e => {
+    if (e.beta == null || e.gamma == null) return;
+    if (calibrate || !tiltBase) { tiltBase = { b: e.beta, g: e.gamma }; calibrate = false; }
+    const cl = v => Math.max(-1, Math.min(1, v));
+    orient = { x: cl((e.gamma - tiltBase.g) / 22), y: cl((e.beta - tiltBase.b) / 22) };
+    if (mode === 'tilt' && !drag) $('stickLabel').textContent = 'Tilting! Drag here to steer by touch instead';
+  });
+  {
+    const el = $('stick');
+    const setDrag = e => {
+      const r = el.getBoundingClientRect(), R = 110;
+      let x = (e.clientX - (r.left + r.width / 2)) / R, y = (e.clientY - (r.top + r.height / 2)) / R;
+      const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
+      drag = { x, y };
+    };
+    el.addEventListener('pointerdown', e => { e.preventDefault(); el.setPointerCapture(e.pointerId); setDrag(e); });
+    el.addEventListener('pointermove', e => { if (drag) setDrag(e); });
+    const end = () => (drag = null);
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  }
+  $('recenterBtn').addEventListener('click', () => { calibrate = true; vibrate(20); });
+  pressable($('dashBtn'), () => send({ t: 'dash' }));
+  function tiltTick(now) {
+    if (mode !== 'tilt') return;
+    const v = drag || (opts.motion && orient) || { x: 0, y: 0 };
+    $('stickKnob').style.transform = `translate(${v.x * 110}px, ${v.y * 110}px)`;
+    const changed = Math.abs(v.x - lastTilt.x) + Math.abs(v.y - lastTilt.y) > 0.02;
+    if ((changed && now - lastTiltSend > 33) || now - lastTiltSend > 250) {
+      send({ t: 'tilt', x: +v.x.toFixed(3), y: +v.y.toFixed(3) });
+      lastTilt = v; lastTiltSend = now;
+    }
+  }
+
+  // ---------- quiz answers ----------
+  document.querySelectorAll('.choice').forEach(b => pressable(b, () => { send({ t: 'choice', i: +b.dataset.i }); vibrate(30); }));
+
   // ---------- motion ----------
   const grav = { x: 0, y: 0, z: 0 }; let gravInit = false;
   let lastMotionT = 0, armed = true, lastShakeT = 0;
@@ -236,7 +282,8 @@
   });
 
   // flush pointer movement at display rate
-  (function loop() {
+  (function loop(now) {
+    tiltTick(now || performance.now());
     if (Math.abs(accDx) > 0.05 || Math.abs(accDy) > 0.05) {
       send({ t: 'p', dx: +accDx.toFixed(2), dy: +accDy.toFixed(2) });
       accDx = 0; accDy = 0;
@@ -257,6 +304,19 @@
     if (e.code === 'Space' || e.code === 'Enter') btn('a', false);
     if (e.code === 'KeyB' || e.code === 'Escape') btn('b', false);
     if (e.code === 'KeyH') btn('home', false);
+  });
+  const keysDown = new Set();
+  addEventListener('keydown', e => {
+    keysDown.add(e.code);
+    if (mode === 'tilt' && e.code.startsWith('Arrow')) {
+      drag = { x: (keysDown.has('ArrowRight') ? 1 : 0) - (keysDown.has('ArrowLeft') ? 1 : 0), y: (keysDown.has('ArrowDown') ? 1 : 0) - (keysDown.has('ArrowUp') ? 1 : 0) };
+    }
+    if (mode === 'tilt' && e.code === 'KeyD') send({ t: 'dash' });
+    if (mode === 'choice' && /^Digit[1-4]$/.test(e.code)) send({ t: 'choice', i: +e.code.slice(5) - 1 });
+  });
+  addEventListener('keyup', e => {
+    keysDown.delete(e.code);
+    if (mode === 'tilt' && e.code.startsWith('Arrow') && ![...keysDown].some(k => k.startsWith('Arrow'))) drag = null;
   });
   addEventListener('keydown', e => {
     const step = 40;

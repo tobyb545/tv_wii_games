@@ -77,6 +77,29 @@
     <button id="bombBtn" class="zone bomb"><span class="zone-big">💣</span><span class="zone-mid" id="bombText">TAP TO THROW</span></button>
   </div>
 
+  <!-- tilt mode (joystick) -->
+  <div class="mode m-tilt">
+    <div id="stick" class="stick">
+      <div class="stick-ring"></div>
+      <div id="stickKnob" class="knob"></div>
+      <div class="stick-label" id="stickLabel">Tilt your phone to roll, or drag here</div>
+    </div>
+    <div class="tilt-row">
+      <button id="recenterBtn" class="chip">⟲ Re-centre tilt</button>
+      <button id="dashBtn" class="dash">DASH!</button>
+    </div>
+  </div>
+
+  <!-- four-answer mode (quiz) -->
+  <div class="mode m-choice">
+    <div class="choices">
+      <button class="choice c0" data-i="0"><span class="shape">▲</span><span class="ctext"></span></button>
+      <button class="choice c1" data-i="1"><span class="shape">◆</span><span class="ctext"></span></button>
+      <button class="choice c2" data-i="2"><span class="shape">●</span><span class="ctext"></span></button>
+      <button class="choice c3" data-i="3"><span class="shape">■</span><span class="ctext"></span></button>
+    </div>
+  </div>
+
   <div class="mode m-wait">
     <div class="zone wait"><div class="zone-mid" id="waitText">Hang tight…</div></div>
   </div>
