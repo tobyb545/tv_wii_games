@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f7fb">
+<title>Huddle Controller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/pad/pad.css">
+</head>
+<body data-screen="join" data-mode="pointer">
+
+<!-- Join screen -->
+<section id="join" class="screen">
+  <div class="logo">huddle</div>
+  <p class="sub">Your phone is the controller</p>
+  <label class="field">
+    <span>Your name</span>
+    <input id="nameInput" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="e.g. Sam">
+  </label>
+  <button id="joinBtn" class="big-btn">Join the game</button>
+  <p class="note" id="joinNote">Hold your phone upright like a remote. When asked, allow motion access so you can aim by pointing.</p>
+</section>
+
+<!-- Controller -->
+<section id="pad" class="screen">
+  <header id="bar">
+    <div class="who"><span id="slotBadge">P1</span><span id="nameLabel">Player</span></div>
+    <div class="bar-btns">
+      <span id="net" class="net" title="connection"></span>
+      <button id="gearBtn" class="icon-btn" aria-label="Settings">⚙︎</button>
+      <button id="homeBtn" class="icon-btn home" aria-label="Home">⌂</button>
+    </div>
+  </header>
+  <div id="hint">Point at the screen</div>
+
+  <!-- pointer mode -->
+  <div class="mode m-pointer">
+    <div id="touchpad" class="touchpad">
+      <div class="tp-label">Drag to move · tap to select</div>
+      <button id="motionChip" class="chip">Motion aim: on</button>
+    </div>
+    <div class="btn-row">
+      <button id="bBtn" class="round b">B</button>
+      <button id="aBtn" class="round a">A</button>
+    </div>
+  </div>
+
+  <!-- shake mode -->
+  <div class="mode m-shake">
+    <div id="shakeZone" class="zone shake-zone">
+      <div class="zone-big">SHAKE!</div>
+      <div class="zone-small" id="shakeCount">or tap here as fast as you can</div>
+    </div>
+  </div>
+
+  <!-- swing mode (bowling) -->
+  <div class="mode m-swing">
+    <div id="aimStrip" class="aim-strip"><span>◀ drag to line up ▶</span></div>
+    <div id="swingZone" class="zone swing-zone">
+      <div class="zone-big">↑</div>
+      <div class="zone-mid">Swipe up to bowl</div>
+      <div class="zone-small" id="swingNote">…or press and hold here, swing your arm, and let go</div>
+    </div>
+  </div>
+
+  <!-- big single button modes -->
+  <div class="mode m-buzzer">
+    <button id="buzzer" class="zone buzzer"><span class="zone-big" id="buzzerText">TAP!</span></button>
+  </div>
+
+  <div class="mode m-bomb">
+    <button id="bombBtn" class="zone bomb"><span class="zone-big">💣</span><span class="zone-mid" id="bombText">TAP TO THROW</span></button>
+  </div>
+
+  <div class="mode m-wait">
+    <div class="zone wait"><div class="zone-mid" id="waitText">Hang tight…</div></div>
+  </div>
+</section>
+
+<!-- Settings sheet -->
+<div id="sheet" class="sheet hidden">
+  <div class="sheet-card">
+    <h2>Controller settings</h2>
+    <label class="row"><span>Name</span><input id="renameInput" maxlength="14"></label>
+    <label class="row"><span>Motion aim</span><input type="checkbox" id="optMotion"></label>
+    <label class="row"><span>Sensitivity</span><input type="range" id="optSens" min="8" max="60" step="1"></label>
+    <label class="row"><span>Invert left/right</span><input type="checkbox" id="optInvX"></label>
+    <label class="row"><span>Invert up/down</span><input type="checkbox" id="optInvY"></label>
+    <p class="note" id="motionStatus"></p>
+    <button id="sheetClose" class="big-btn">Done</button>
+  </div>
+</div>
+
+<div id="flash"></div>
+<script src="/pad/pad.js"></script>
+</body>
+</html>

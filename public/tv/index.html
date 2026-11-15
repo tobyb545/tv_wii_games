@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huddle Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #0d1117; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; background: #eef2f6; }
+  body.hide-cursor canvas { cursor: none; }
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<script src="/tv/core.js"></script>
+<script src="/tv/games/balloons.js"></script>
+<script src="/tv/games/bowling.js"></script>
+<script src="/tv/games/sprint.js"></script>
+<script src="/tv/games/showdown.js"></script>
+<script src="/tv/games/bomb.js"></script>
+<script>Huddle.boot();</script>
+</body>
+</html>
