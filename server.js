@@ -122,7 +122,13 @@ function onConnection(ws, req) {
     const used = new Set([...pads.values()].map(x => x.slot));
     let slot = -1;
     for (let i = 0; i < MAX_PLAYERS; i++) if (!used.has(i)) { slot = i; break; }
-    if (slot < 0) { send(ws, { t: 'full' }); return ws.close(); }
+    if (slot < 0) {
+      // Full: take over the slot of a phone that has disconnected, if any.
+      const stale = [...pads.values()].find(x => !x.ws);
+      if (!stale) { send(ws, { t: 'full' }); return ws.close(); }
+      clearTimeout(stale.goneTimer); pads.delete(stale.id); toHost({ t: 'gone', id: stale.id });
+      slot = stale.slot;
+    }
     p = { id, slot, name: name || `Player ${slot + 1}`, color: COLORS[slot] };
     pads.set(id, p);
   }

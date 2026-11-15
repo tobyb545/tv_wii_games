@@ -298,6 +298,7 @@
 
       return {
         destroy() { rumble.stop(); },
+        debug: () => ({ phase: S.phase, cur: bowler().name, frame: S.frame, frames: JSON.parse(JSON.stringify(frames)) }),
         update(dt) {
           S.t += dt; S.clackT -= dt;
           if (S.phase === 'intro' && S.t > 1.2) beginTurn();
@@ -313,7 +314,7 @@
           }
           if (S.phase === 'show' && S.t > 2.2) advance();
           // camera follow
-          const target = S.ball ? clamp(S.ball.y - 3.2, -2.2, 11.4) : -2.2;
+          const target = S.ball ? clamp(S.ball.y - 3.2, -2.2, 12.4) : -2.2;
           const speed = S.phase === 'aim' ? 3 : 2.2;
           S.cam += (target - S.cam) * Math.min(1, dt * speed);
         },

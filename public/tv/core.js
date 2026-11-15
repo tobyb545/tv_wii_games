@@ -665,7 +665,9 @@
     if (rows[0] && stateT > 0.6) {
       const k = easeBack((stateT - 0.6) / 0.5);
       ctx.save(); ctx.translate(W / 2, 935); ctx.scale(k, k);
-      text(ctx, `${rows.filter(r => r.rank === 1).map(r => r.p.name).join(' & ')} win${rows.filter(r => r.rank === 1).length > 1 ? '' : 's'}!`, 0, -40, 44, '#ffb020', 'center', 900);
+      const top = rows.filter(r => r.rank === 1);
+      const msg = top.length === rows.length && rows.length > 1 ? 'It\u2019s a tie!' : top.length > 2 ? `${top.length}-way tie for first!` : `${top.map(r => r.p.name).join(' & ')} win${top.length > 1 ? '' : 's'}!`;
+      text(ctx, msg, 0, -40, 44, '#ffb020', 'center', 900);
       ctx.restore();
     }
     button('rs-again', W / 2 - 430, 960, 400, 96, 'Play again', () => startGame(results.def), { primary: true, disabled: roster().length < (results.def.minPlayers || 1) });
@@ -790,6 +792,7 @@
 
   window.Huddle = {
     register(def) { games.push(def); },
+    debug() { return { state, paused, game: currentDef && currentDef.id, info: current && current.debug ? current.debug() : null, results: results && results.rows.map(r => [r.p.name, r.score, r.label]) }; },
     helpers: { clamp, lerp, rand, pick, ease, easeBack, rr, text, outlined, shade, avatar, wrap },
     FONT, W, H,
     async boot() {
