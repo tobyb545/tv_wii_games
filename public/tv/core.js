@@ -338,6 +338,7 @@
   function makeApi(def) {
     return {
       W, H, FONT, ctx, Sound, sfx: n => Sound.play(n), setMode, buzz, toast,
+      send: (id, m) => Net.to(id, m),
       end: (res, opt) => endGame(res, opt),
       helpers: { clamp, lerp, rand, pick, ease, easeBack, rr, text, outlined, shade, avatar },
       get time() { return T; },
@@ -395,6 +396,7 @@
   addEventListener('keydown', e => {
     if (state === 'splash') return begin();
     if (e.code === 'KeyF') toggleFullscreen();
+    if (state === 'menu' && (e.code === 'ArrowRight' || e.code === 'ArrowLeft')) turnPage(e.code === 'ArrowRight' ? 1 : -1);
     if (e.code === 'Escape' || e.code === 'Backspace') {
       if (state === 'game') { paused = !paused; if (!paused) restoreGameModes(); }
       else if (state !== 'menu') go('menu');
@@ -438,10 +440,44 @@
     { util: 'players', name: 'Players', preview: previewPlayers },
     { util: 'settings', name: 'Settings', preview: previewSettings },
   ];
-  function menuTiles() { const list = [...games, ...utilTiles]; while (list.length < COLS * ROWS) list.push(null); return list; }
+  const PER = COLS * ROWS;
+  let menuPage = 0;
+  const pageCount = () => Math.max(1, Math.ceil((games.length + utilTiles.length) / PER));
+  function menuTiles() {
+    const all = [...games, ...utilTiles];
+    menuPage = clamp(menuPage, 0, pageCount() - 1);
+    const list = all.slice(menuPage * PER, menuPage * PER + PER);
+    while (list.length < PER) list.push(null);
+    return list;
+  }
+  function turnPage(d) {
+    const n = clamp(menuPage + d, 0, pageCount() - 1);
+    if (n !== menuPage) { menuPage = n; Sound.play('hover'); hoverState.clear(); }
+  }
+  function drawPager(t) {
+    const n = pageCount(); if (n < 2) return;
+    const cy = GY + (ROWS * TH + (ROWS - 1) * GAP) / 2;
+    [[-1, 67, '\u2039'], [1, W - 67, '\u203a']].forEach(([d, x, ch]) => {
+      const on = d < 0 ? menuPage > 0 : menuPage < n - 1;
+      if (!on) return;
+      const id = 'page' + d;
+      const hov = region(id, x - 55, cy - 80, 110, 160, () => turnPage(d));
+      const a = hoverAnim(id, hov);
+      ctx.save(); ctx.translate(x, cy); ctx.scale(1 + a * 0.12, 1 + a * 0.12);
+      ctx.shadowColor = a > 0.05 ? `rgba(52,170,255,${0.6 * a})` : 'rgba(0,0,0,.12)'; ctx.shadowBlur = 12 + a * 24;
+      ctx.beginPath(); ctx.arc(0, 0, 48, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.lineWidth = 4; ctx.strokeStyle = a > 0.05 ? '#34aaff' : '#cfd8e1'; ctx.stroke();
+      text(ctx, ch, d < 0 ? -3 : 3, -6, 84, a > 0.05 ? '#2f8cff' : '#8994a1', 'center', 900);
+      ctx.restore();
+    });
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath(); ctx.arc(W / 2 + (i - (n - 1) / 2) * 34, 803, i === menuPage ? 9 : 7, 0, Math.PI * 2);
+      ctx.fillStyle = i === menuPage ? '#34aaff' : '#c3ced9'; ctx.fill();
+    }
+  }
 
   function drawTile(i, tile, t) {
-    const r = tileRect(i), id = 'tile' + i;
+    const r = tileRect(i), id = 'tile' + menuPage + '-' + i;
     const hov = tile ? region(id, r.x, r.y, r.w, r.h, () => openTile(tile, i)) : false;
     const a = hoverAnim(id, hov);
     ctx.save();
@@ -533,6 +569,7 @@
   function drawMenu(t) {
     backdrop(t);
     menuTiles().forEach((tile, i) => drawTile(i, tile, t));
+    drawPager(t);
     drawDock(t);
   }
 
@@ -792,6 +829,7 @@
 
   window.Huddle = {
     register(def) { games.push(def); },
+    page(n) { if (n == null) return menuPage; menuPage = clamp(n, 0, pageCount() - 1); return menuPage; },
     debug() { return { state, paused, game: currentDef && currentDef.id, info: current && current.debug ? current.debug() : null, results: results && results.rows.map(r => [r.p.name, r.score, r.label]) }; },
     helpers: { clamp, lerp, rand, pick, ease, easeBack, rr, text, outlined, shade, avatar, wrap },
     FONT, W, H,

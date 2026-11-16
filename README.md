@@ -50,6 +50,10 @@ If the cursor drifts, push it against the edge of the screen to re-centre it.
 | **Brain Buzz** | 1–8, all at once | 10 quiz questions answered on your phone. Faster correct answers score more |
 | **Splat Turf** | 1–8, all at once | Point to paint the floor your colour. A drops a paint bomb |
 | **Pump & Pop** | 1–8, all at once | Hold to pump, let go to bank. Each balloon has a secret popping point |
+| **Doodle Dash** | 2–8, taking turns | One player draws a secret word on their phone, everyone else types guesses. Faster guesses score more |
+| **Pie Face** | 1–8, all at once | Point and press A to throw custard pies at pop-up clowns. Gold clowns +3, ringmaster −3 |
+| **Derby Dash** | 1–8, all at once | Fairground horse race: swipe up to roll a ball into the 1, 2 or 3 holes and move your horse |
+| **Ring the Bell** | 1–8, all at once | Swing your phone (or swipe hard) while your power needle is in the green to ring the bell |
 | **Turbo Tracks** | 1–8 (+ CPU racers) | Kart racing on 3 tracks or a 3-race Grand Prix. Steer by turning your phone like a wheel. Grab item orbs for Turbo, Goo, Shockwave or Shield |
 
 ## Adding a game
@@ -57,8 +61,9 @@ If the cursor drifts, push it against the edge of the screen to re-centre it.
 Create `public/tv/games/mygame.js` and call `Huddle.register({ id, name, desc, controls, minPlayers, preview(ctx,w,h,t), create(api, players) })`. Then add a `<script>` tag for it in `public/tv/index.html`. The other game files show how it works:
 
 - `create` returns `{ update(dt), draw(ctx,t), input(player, msg) }`.
-- Phone messages are `{t:'btn',b:'a',d:true}`, `{t:'p',dx,dy}`, `{t:'shake',s}`, `{t:'swing',power,curve,spin}`, `{t:'tilt',x,y}`, `{t:'dash'}`, `{t:'choice',i}`, `{t:'steer',s}` and `{t:'item'}`.
-- `api.setMode(mode, hint, ids?, {text})` switches the phone layout: `pointer`, `shake`, `swing`, `buzzer`, `bomb`, `tilt`, `choice` (pass `{options:[…4]}`), `drive` (pass `{item}`) or `wait`.
+- Phone messages are `{t:'btn',b:'a',d:true}`, `{t:'p',dx,dy}`, `{t:'shake',s}`, `{t:'swing',power,curve,spin}`, `{t:'tilt',x,y}`, `{t:'dash'}`, `{t:'choice',i}`, `{t:'steer',s}`, `{t:'item'}`, `{t:'stroke',id,c,w,pts}` / `{t:'undo'}` / `{t:'clear'}` / `{t:'pass'}` (drawing) and `{t:'guess',text}`.
+- `api.setMode(mode, hint, ids?, {text})` switches the phone layout: `pointer`, `shake`, `swing` (optional `{text, noAim}`), `buzzer`, `bomb`, `tilt`, `choice` (pass `{options:[…4]}`), `drive` (pass `{item}`), `draw` (pass `{word, canPass}`), `guess` (pass `{round}`) or `wait`.
+- `api.send(id, {t:'fb', text, kind})` shows feedback on a phone in `guess` mode.
 - `api.end(results)` shows the results screen.
 
-The TV can draw up to 12 menu tiles.
+The menu shows 12 tiles per page and adds more pages as you add games (use the arrows, or ← → on the keyboard).

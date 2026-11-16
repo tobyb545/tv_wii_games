@@ -56,7 +56,7 @@ body[data-screen="join"] #join, body[data-screen="pad"] #pad { display: flex; }
 .mode { display: none; flex: 1; flex-direction: column; gap: 12px; min-height: 0; }
 body[data-mode="pointer"] .m-pointer, body[data-mode="shake"] .m-shake, body[data-mode="swing"] .m-swing,
 body[data-mode="buzzer"] .m-buzzer, body[data-mode="bomb"] .m-bomb, body[data-mode="wait"] .m-wait,
-body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice, body[data-mode="drive"] .m-drive { display: flex; }
+body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice, body[data-mode="drive"] .m-drive, body[data-mode="draw"] .m-draw, body[data-mode="guess"] .m-guess { display: flex; }
 
 .touchpad {
   flex: 1; border-radius: 28px; background: #fff; border: 2px solid var(--line); position: relative;
@@ -139,3 +139,32 @@ body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice, body[data-mo
 .item-btn { flex: 1; border-radius: 26px; background: #c9d2dc; color: #fff; font-weight: 900; font-size: 26px; box-shadow: 0 6px 0 rgba(0,0,0,.12); }
 .item-btn.has { background: var(--pc); }
 .brake.pressed, .item-btn.pressed { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+
+/* draw (Doodle Dash) */
+.m-draw { gap: 8px; }
+.draw-word { display: flex; align-items: center; gap: 10px; font-weight: 800; color: #6b7886; }
+.draw-word b { flex: 1; font-size: 26px; font-weight: 900; color: #33404d; text-transform: uppercase; letter-spacing: .03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.draw-word .chip.used { opacity: .35; pointer-events: none; }
+.draw-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.draw-wrap canvas { background: #fff; border-radius: 18px; box-shadow: 0 0 0 3px #d5dde6, 0 6px 16px rgba(0,0,0,.08); touch-action: none; }
+.draw-tools { display: flex; flex-direction: column; gap: 8px; }
+.swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.swatch { aspect-ratio: 1; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px #d5dde6; }
+.swatch.on { box-shadow: 0 0 0 4px #33404d; }
+.draw-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tool { height: 52px; border-radius: 16px; background: #fff; box-shadow: 0 3px 0 #d5dde6; font-size: 24px; font-weight: 900; color: #4a5866; display: flex; align-items: center; justify-content: center; }
+.tool.on { background: #33404d; color: #fff; }
+.tool.pressed { transform: translateY(2px); box-shadow: 0 1px 0 #d5dde6; }
+.tool .dot { display: block; width: var(--d, 12px); height: var(--d, 12px); border-radius: 50%; background: currentColor; }
+
+/* guess (Doodle Dash) */
+.guess-card { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.guess-fb { background: #fff; border-radius: 20px; padding: 16px; font-size: 20px; font-weight: 900; color: #4a5866; text-align: center; box-shadow: 0 4px 0 #d5dde6; }
+.guess-fb.close { color: #e08a00; } .guess-fb.no { color: #8994a1; } .guess-fb.yes { color: #1f9b54; }
+.guess-form { display: flex; gap: 8px; }
+.guess-form input { flex: 1; min-width: 0; font: inherit; font-size: 22px; font-weight: 800; padding: 14px 16px; border-radius: 18px; border: 3px solid #d5dde6; background: #fff; color: #33404d; }
+.guess-form input:focus { outline: none; border-color: var(--pc, #2f8cff); }
+.guess-send { font: inherit; font-size: 20px; font-weight: 900; padding: 0 20px; border-radius: 18px; background: var(--pc, #2f8cff); color: #fff; }
+.guess-list { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; overflow: hidden; }
+.guess-list span { background: #e9eef3; color: #6b7886; border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: 15px; text-decoration: line-through; }
+.guess-list span.close { background: #fff1d6; color: #b36b00; text-decoration: none; }

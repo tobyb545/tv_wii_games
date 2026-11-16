@@ -40,6 +40,8 @@
       } else if (m.t === 'buzz') {
         vibrate(m.ms || 30);
         if (m.flash) flash();
+      } else if (m.t === 'fb') {
+        guessFeedback(m.text, m.kind, m.guess);
       } else if (m.t === 'full') {
         wantConnected = false;
         alertBox('The game is full (8 players).');
@@ -67,6 +69,17 @@
       const o = extra.options || ['', '', '', ''];
       document.querySelectorAll('.choice').forEach((b, i) => { b.querySelector('.ctext').textContent = o[i] || ''; b.style.visibility = o[i] === null ? 'hidden' : ''; });
     }
+    if (m === 'swing') {
+      $('swingText').textContent = extra.text || 'Swipe up to bowl';
+      $('aimStrip').style.display = extra.noAim ? 'none' : '';
+      if (extra.aimText) $('aimStrip').querySelector('span').textContent = extra.aimText;
+    }
+    if (m === 'draw') startDrawing(extra);
+    if (m === 'guess' && extra.round !== guessRound) {
+      guessRound = extra.round; $('guessList').innerHTML = ''; $('guessInput').value = '';
+      guessFeedback(extra.text || 'Watch the TV and type your guess', '');
+    }
+    if (m !== 'guess') try { $('guessInput').blur(); } catch {}
     if (m === 'shake') { shakes = 0; $('shakeCount').textContent = motionSeen ? 'shake it like you mean it' : 'tap here as fast as you can'; }
   }
 
@@ -292,6 +305,110 @@
   // ---------- quiz answers ----------
   document.querySelectorAll('.choice').forEach(b => pressable(b, () => { send({ t: 'choice', i: +b.dataset.i }); vibrate(30); }));
 
+  // ---------- drawing (Doodle Dash) ----------
+  // The board is always 3:4 (width:height) so the TV can show it exactly as drawn.
+  // Points are sent as fractions of the board size.
+  const COLORS = ['#1e2630', '#ff4d5e', '#ff9f1c', '#ffd43b', '#2fc46b', '#2f8cff', '#9b5de5', '#8d5b3a'];
+  const SIZES = [0.012, 0.026, 0.05];
+  const dc = $('drawCanvas'), dctx = dc.getContext('2d');
+  let drawWord = null, strokes = [], curStroke = null, pendingPts = [], strokeSeq = 0;
+  let penColor = COLORS[0], penSize = 1, erasing = false, lastDrawSend = 0;
+  COLORS.forEach((c, i) => {
+    const b = document.createElement('button'); b.className = 'swatch' + (i ? '' : ' on'); b.style.background = c;
+    b.addEventListener('click', () => { penColor = c; erasing = false; refreshTools(); vibrate(10); });
+    $('swatches').appendChild(b);
+  });
+  function refreshTools() {
+    document.querySelectorAll('.swatch').forEach((b, i) => b.classList.toggle('on', !erasing && COLORS[i] === penColor));
+    $('eraseBtn').classList.toggle('on', erasing);
+    $('sizeBtn').style.setProperty('--d', [8, 16, 28][penSize] + 'px');
+  }
+  refreshTools();
+  $('sizeBtn').addEventListener('click', () => { penSize = (penSize + 1) % SIZES.length; refreshTools(); vibrate(10); });
+  $('eraseBtn').addEventListener('click', () => { erasing = !erasing; refreshTools(); vibrate(10); });
+  $('undoBtn').addEventListener('click', () => { flushDraw(); strokes.pop(); redraw(); send({ t: 'undo' }); vibrate(15); });
+  $('clearBtn').addEventListener('click', () => { strokes = []; redraw(); send({ t: 'clear' }); vibrate(30); });
+  $('passBtn').addEventListener('click', () => { send({ t: 'pass' }); $('passBtn').classList.add('used'); vibrate(20); });
+  function sizeBoard() {
+    const r = $('drawWrap').getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    let w = r.width, h = w * 4 / 3;
+    if (h > r.height) { h = r.height; w = h * 3 / 4; }
+    const dpr = window.devicePixelRatio || 1;
+    dc.style.width = w + 'px'; dc.style.height = h + 'px';
+    dc.width = Math.round(w * dpr); dc.height = Math.round(h * dpr);
+    redraw();
+  }
+  function paint(st) {
+    const W = dc.width, H = dc.height;
+    dctx.strokeStyle = st.c; dctx.fillStyle = st.c; dctx.lineWidth = st.w * W; dctx.lineCap = 'round'; dctx.lineJoin = 'round';
+    const p = st.pts;
+    if (p.length === 1) { dctx.beginPath(); dctx.arc(p[0][0] * W, p[0][1] * H, st.w * W / 2, 0, Math.PI * 2); dctx.fill(); return; }
+    dctx.beginPath(); dctx.moveTo(p[0][0] * W, p[0][1] * H);
+    for (let i = 1; i < p.length; i++) dctx.lineTo(p[i][0] * W, p[i][1] * H);
+    dctx.stroke();
+  }
+  function redraw() { dctx.fillStyle = '#fff'; dctx.fillRect(0, 0, dc.width, dc.height); strokes.forEach(paint); }
+  function startDrawing(extra) {
+    $('drawWord').textContent = extra.word || '…';
+    $('passBtn').classList.toggle('used', !extra.canPass);
+    if (extra.word !== drawWord) { drawWord = extra.word; strokes = []; curStroke = null; pendingPts = []; }
+    requestAnimationFrame(sizeBoard);
+  }
+  addEventListener('resize', () => { if (mode === 'draw') sizeBoard(); });
+  const boardPt = e => { const r = dc.getBoundingClientRect(); return [+Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)).toFixed(4), +Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)).toFixed(4)]; };
+  dc.addEventListener('pointerdown', e => {
+    e.preventDefault(); dc.setPointerCapture(e.pointerId);
+    flushDraw();
+    const pt = boardPt(e);
+    curStroke = { id: ++strokeSeq, c: erasing ? '#ffffff' : penColor, w: SIZES[penSize] * (erasing ? 2 : 1), pts: [pt] };
+    strokes.push(curStroke); paint(curStroke);
+    send({ t: 'stroke', id: curStroke.id, c: curStroke.c, w: curStroke.w, pts: [pt] });
+  });
+  dc.addEventListener('pointermove', e => {
+    if (!curStroke) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs) {
+      const pt = boardPt(ev), last = curStroke.pts[curStroke.pts.length - 1];
+      if (Math.hypot(pt[0] - last[0], pt[1] - last[1]) < 0.004) continue;
+      curStroke.pts.push(pt); pendingPts.push(pt);
+    }
+    const W = dc.width, H = dc.height, p = curStroke.pts, n = p.length;
+    if (n > 1) {
+      dctx.strokeStyle = curStroke.c; dctx.lineWidth = curStroke.w * W; dctx.lineCap = 'round'; dctx.lineJoin = 'round';
+      dctx.beginPath(); dctx.moveTo(p[Math.max(0, n - 1 - evs.length)][0] * W, p[Math.max(0, n - 1 - evs.length)][1] * H);
+      for (let i = Math.max(1, n - evs.length); i < n; i++) dctx.lineTo(p[i][0] * W, p[i][1] * H);
+      dctx.stroke();
+    }
+  });
+  const endStroke = () => { if (!curStroke) return; flushDraw(); curStroke = null; };
+  dc.addEventListener('pointerup', endStroke); dc.addEventListener('pointercancel', endStroke);
+  function flushDraw() {
+    if (curStroke && pendingPts.length) { send({ t: 'stroke', id: curStroke.id, pts: pendingPts }); pendingPts = []; }
+    lastDrawSend = performance.now();
+  }
+  function drawTick(now) { if (mode === 'draw' && pendingPts.length && now - lastDrawSend > 40) flushDraw(); }
+
+  // ---------- guessing (Doodle Dash) ----------
+  let guessRound = null;
+  function guessFeedback(text, kind, guess) {
+    const fb = $('guessFeedback'); fb.textContent = text; fb.className = 'guess-fb ' + (kind || '');
+    if (guess && (kind === 'no' || kind === 'close')) {
+      const s = document.createElement('span'); s.textContent = guess; if (kind === 'close') s.className = 'close';
+      $('guessList').prepend(s);
+      while ($('guessList').children.length > 12) $('guessList').lastChild.remove();
+    }
+    if (kind === 'close') vibrate([30, 40, 30]); else if (kind === 'no') vibrate(20);
+  }
+  $('guessForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const g = $('guessInput').value.trim();
+    if (!g) return;
+    send({ t: 'guess', text: g.slice(0, 24) });
+    $('guessInput').value = '';
+    $('guessInput').focus();
+  });
+
   // ---------- motion ----------
   const grav = { x: 0, y: 0, z: 0 }; let gravInit = false;
   let lastMotionT = 0, armed = true, lastShakeT = 0;
@@ -339,6 +456,7 @@
   (function loop(now) {
     tiltTick(now || performance.now());
     driveTick(now || performance.now());
+    drawTick(now || performance.now());
     if (Math.abs(accDx) > 0.05 || Math.abs(accDy) > 0.05) {
       send({ t: 'p', dx: +accDx.toFixed(2), dy: +accDy.toFixed(2) });
       accDx = 0; accDy = 0;

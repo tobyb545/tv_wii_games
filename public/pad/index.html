@@ -63,7 +63,7 @@
     <div id="aimStrip" class="aim-strip"><span>◀ drag to line up ▶</span></div>
     <div id="swingZone" class="zone swing-zone">
       <div class="zone-big">↑</div>
-      <div class="zone-mid">Swipe up to bowl</div>
+      <div class="zone-mid" id="swingText">Swipe up to bowl</div>
       <div class="zone-small" id="swingNote">…or press and hold here, swing your arm, and let go</div>
     </div>
   </div>
@@ -116,6 +116,33 @@
       <button class="choice c1" data-i="1"><span class="shape">◆</span><span class="ctext"></span></button>
       <button class="choice c2" data-i="2"><span class="shape">●</span><span class="ctext"></span></button>
       <button class="choice c3" data-i="3"><span class="shape">■</span><span class="ctext"></span></button>
+    </div>
+  </div>
+
+  <!-- draw mode (Doodle Dash: the artist) -->
+  <div class="mode m-draw">
+    <div class="draw-word"><span>Draw</span><b id="drawWord">…</b><button id="passBtn" class="chip">New word</button></div>
+    <div id="drawWrap" class="draw-wrap"><canvas id="drawCanvas"></canvas></div>
+    <div class="draw-tools">
+      <div class="swatches" id="swatches"></div>
+      <div class="draw-btns">
+        <button id="sizeBtn" class="tool" aria-label="Brush size"><span class="dot"></span></button>
+        <button id="eraseBtn" class="tool" aria-label="Eraser">⌫</button>
+        <button id="undoBtn" class="tool" aria-label="Undo">↶</button>
+        <button id="clearBtn" class="tool" aria-label="Clear">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- guess mode (Doodle Dash: everyone else) -->
+  <div class="mode m-guess">
+    <div class="guess-card">
+      <div id="guessFeedback" class="guess-fb">Watch the TV and type your guess</div>
+      <form id="guessForm" class="guess-form" autocomplete="off">
+        <input id="guessInput" maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="send" placeholder="Your guess">
+        <button type="submit" class="guess-send">Guess</button>
+      </form>
+      <div id="guessList" class="guess-list"></div>
     </div>
   </div>
 
