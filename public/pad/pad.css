@@ -67,6 +67,11 @@ body[data-mode="tilt"] .m-tilt, body[data-mode="choice"] .m-choice, body[data-mo
 .tp-label { color: var(--muted); font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 10px; }
 .chip { font-weight: 800; font-size: 14px; padding: 8px 14px; border-radius: 999px; background: #eef2f7; color: var(--ink); }
 .chip.on { background: var(--pc); color: #fff; }
+.speed-chip { display: flex; align-items: center; gap: 4px; background: #eef2f7; border-radius: 999px; padding: 4px; font-weight: 800; font-size: 14px; color: var(--ink); }
+.speed-chip button { width: 36px; height: 36px; border-radius: 50%; background: #fff; font-size: 22px; font-weight: 900; color: var(--ink); line-height: 1; }
+.speed-chip button:active { background: var(--pc); color: #fff; }
+.speed-chip span { min-width: 92px; text-align: center; }
+.row small { color: var(--muted); font-weight: 800; }
 .btn-row { display: flex; justify-content: space-around; align-items: center; padding: 4px 10px; }
 .round { border-radius: 50%; font-weight: 900; box-shadow: 0 6px 0 rgba(0,0,0,.15); }
 .round.a { width: 118px; height: 118px; background: var(--pc); color: #fff; font-size: 52px; }

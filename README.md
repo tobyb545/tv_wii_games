@@ -33,7 +33,8 @@ If you skip motion, everything still works with touch controls.
 | **A** (or tap the pad) | select / fire |
 | **B** | back |
 | **⌂** | pause menu |
-| ⚙︎ | rename, motion on/off, sensitivity, invert |
+| **− Speed +** (on the pad) | makes the pointer slower or faster |
+| ⚙︎ | rename, motion on/off, pointer speed, invert |
 
 If the cursor drifts, push it against the edge of the screen to re-centre it.
 

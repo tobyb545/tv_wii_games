@@ -8,7 +8,14 @@
 
   let id = store.get('id', null);
   if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)); store.set('id', id); }
-  const opts = Object.assign({ motion: true, sens: 26, invX: false, invY: false }, store.get('opts', {}));
+  // speed is a multiplier on the pointer (1 = default). It replaced the old 'sens' value, which is ignored
+  // so everyone gets the new, calmer default.
+  const opts = Object.assign({ motion: true, speed: 1, invX: false, invY: false }, store.get('opts', {}));
+  delete opts.sens;
+  const MOTION_GAIN = 15, TOUCH_GAIN = 2.4; // were 26 and 3.2: the pointer felt too twitchy
+  const SPEED_MIN = 0.3, SPEED_MAX = 2;
+  const clampSpeed = v => Math.round(Math.max(SPEED_MIN, Math.min(SPEED_MAX, +v || 1)) * 100) / 100;
+  opts.speed = clampSpeed(opts.speed);
   let ws = null, me = null, mode = 'pointer', retry = 0, wantConnected = false;
   let motionSeen = false, wakeLock = null;
 
@@ -146,7 +153,7 @@
     const tp = $('touchpad');
     let last = null, start = null, moved = 0;
     tp.addEventListener('pointerdown', e => {
-      if (e.target.id === 'motionChip') return;
+      if (e.target.id === 'motionChip' || e.target.closest('.speed-chip')) return;
       e.preventDefault(); tp.setPointerCapture(e.pointerId); tp.classList.add('active');
       last = { x: e.clientX, y: e.clientY }; start = performance.now(); moved = 0;
     });
@@ -154,7 +161,7 @@
       if (!last) return;
       const dx = e.clientX - last.x, dy = e.clientY - last.y;
       moved += Math.abs(dx) + Math.abs(dy);
-      const k = 3.2 * (1 + Math.min(2, Math.hypot(dx, dy) / 18)); // a touch of acceleration
+      const k = TOUCH_GAIN * opts.speed * (1 + Math.min(2, Math.hypot(dx, dy) / 18)); // a touch of acceleration
       accDx += dx * k; accDy += dy * k;
       last = { x: e.clientX, y: e.clientY };
     });
@@ -411,7 +418,7 @@
 
   // ---------- motion ----------
   const grav = { x: 0, y: 0, z: 0 }; let gravInit = false;
-  let lastMotionT = 0, armed = true, lastShakeT = 0;
+  let lastMotionT = 0, armed = true, lastShakeT = 0, smYaw = 0, smPitch = 0;
   window.addEventListener('devicemotion', e => {
     const now = performance.now();
     const dt = lastMotionT ? Math.min((now - lastMotionT) / 1000, 0.05) : 0.016;
@@ -446,9 +453,13 @@
       let r = { x: 1 - u.x * u.x, y: -u.x * u.y, z: -u.x * u.z };
       const rl = Math.hypot(r.x, r.y, r.z) || 1; r = { x: r.x / rl, y: r.y / rl, z: r.z / rl };
       const pitch = w.x * r.x + w.y * r.y + w.z * r.z;
-      const dz = v => (Math.abs(v) < 1.2 ? 0 : v);
-      accDx += -dz(yaw) * dt * opts.sens * (opts.invX ? -1 : 1);
-      accDy += -dz(pitch) * dt * opts.sens * (opts.invY ? -1 : 1);
+      // Smooth out hand tremor, then use a gentle curve: small, slow turns move the pointer less
+      // (precise aiming) while big sweeps still cross the screen quickly.
+      smYaw += (yaw - smYaw) * 0.5; smPitch += (pitch - smPitch) * 0.5;
+      const curve = v => { const a = Math.abs(v); return a < 1.5 ? 0 : v * (0.5 + 0.5 * Math.min(1, a / 60)); };
+      const gain = MOTION_GAIN * opts.speed * dt;
+      accDx += -curve(smYaw) * gain * (opts.invX ? -1 : 1);
+      accDy += -curve(smPitch) * gain * (opts.invY ? -1 : 1);
     }
   });
 
@@ -511,14 +522,26 @@
       : (window.isSecureContext ? 'No motion data yet — on iPhone, rejoin and allow Motion & Orientation access.' : 'Open the secure (https) link from the TV QR code to enable motion.');
   }
   $('motionChip').addEventListener('click', () => { opts.motion = !opts.motion; store.set('opts', opts); refreshMotionChip(); });
+  function setSpeed(v, save = true) {
+    opts.speed = clampSpeed(v);
+    const pct = Math.round(opts.speed * 100) + '%';
+    $('spdVal').textContent = 'Speed ' + pct;
+    $('optSpeedVal').textContent = pct;
+    $('optSpeed').value = opts.speed;
+    if (save) store.set('opts', opts);
+  }
+  $('spdDown').addEventListener('click', () => { setSpeed(opts.speed - 0.1); vibrate(10); });
+  $('spdUp').addEventListener('click', () => { setSpeed(opts.speed + 0.1); vibrate(10); });
+  $('optSpeed').addEventListener('input', e => setSpeed(e.target.value)); // applies live, so you can feel it
+  setSpeed(opts.speed, false);
   $('gearBtn').addEventListener('click', () => {
-    $('optMotion').checked = opts.motion; $('optSens').value = opts.sens;
+    $('optMotion').checked = opts.motion; setSpeed(opts.speed, false);
     $('optInvX').checked = opts.invX; $('optInvY').checked = opts.invY;
     refreshMotionChip();
     $('sheet').classList.remove('hidden');
   });
   $('sheetClose').addEventListener('click', () => {
-    opts.motion = $('optMotion').checked; opts.sens = +$('optSens').value;
+    opts.motion = $('optMotion').checked; opts.speed = clampSpeed($('optSpeed').value);
     opts.invX = $('optInvX').checked; opts.invY = $('optInvY').checked;
     store.set('opts', opts); refreshMotionChip();
     const nn = $('renameInput').value.trim().slice(0, 14);

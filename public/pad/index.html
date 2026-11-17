@@ -43,6 +43,11 @@
     <div id="touchpad" class="touchpad">
       <div class="tp-label">Drag to move · tap to select</div>
       <button id="motionChip" class="chip">Motion aim: on</button>
+      <div class="speed-chip" id="speedChip">
+        <button id="spdDown" aria-label="Slower">−</button>
+        <span id="spdVal">Speed 100%</span>
+        <button id="spdUp" aria-label="Faster">+</button>
+      </div>
     </div>
     <div class="btn-row">
       <button id="bBtn" class="round b">B</button>
@@ -157,7 +162,7 @@
     <h2>Controller settings</h2>
     <label class="row"><span>Name</span><input id="renameInput" maxlength="14"></label>
     <label class="row"><span>Motion aim</span><input type="checkbox" id="optMotion"></label>
-    <label class="row"><span>Sensitivity</span><input type="range" id="optSens" min="8" max="60" step="1"></label>
+    <label class="row"><span>Pointer speed <small id="optSpeedVal"></small></span><input type="range" id="optSpeed" min="0.3" max="2" step="0.05"></label>
     <label class="row"><span>Invert left/right</span><input type="checkbox" id="optInvX"></label>
     <label class="row"><span>Invert up/down</span><input type="checkbox" id="optInvY"></label>
     <p class="note" id="motionStatus"></p>
